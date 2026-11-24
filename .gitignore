@@ -1,0 +1,34 @@
+# Ambientes virtuais
+.venv/
+env/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Arquivos temporários LaTeX e documentos gerados
+*.aux
+*.log
+*.out
+*.toc
+*.nav
+*.snm
+*.vrb
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Relatório de estudo, apresentações e gravações de vídeo locais
+*.pdf
+*.pptx
+*.tex
+*.mp4
+gerar_slides_5_paginas.py
+ufma_logo.png
+
+# SO e IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,54 @@
+{
+  "data_hora": "2026-11-23 20:52:47",
+  "duracao_total_segundos": 86.77,
+  "pontuacao_final": 700,
+  "total_poses_acertadas": 7,
+  "detalhes_poses": [
+    {
+      "pose": "Bracos Abertos (T-Pose)",
+      "tempo_segundos": 27.98,
+      "similaridade_final": 87.1,
+      "pontuacao_acumulada": 100
+    },
+    {
+      "pose": "Maos na Cabeca",
+      "tempo_segundos": 3.1,
+      "similaridade_final": 67.2,
+      "pontuacao_acumulada": 200
+    },
+    {
+      "pose": "Braco Direito Levantado",
+      "tempo_segundos": 3.1,
+      "similaridade_final": 69.9,
+      "pontuacao_acumulada": 300
+    },
+    {
+      "pose": "Braco Esquerdo Levantado",
+      "tempo_segundos": 2.76,
+      "similaridade_final": 78.6,
+      "pontuacao_acumulada": 400
+    },
+    {
+      "pose": "Dois Bracos Levantados",
+      "tempo_segundos": 3.06,
+      "similaridade_final": 71.2,
+      "pontuacao_acumulada": 500
+    },
+    {
+      "pose": "Maos na Cintura",
+      "tempo_segundos": 4.39,
+      "similaridade_final": 68.6,
+      "pontuacao_acumulada": 600
+    },
+    {
+      "pose": "Bracos Abertos (T-Pose)",
+      "tempo_segundos": 3.13,
+      "similaridade_final": 87.6,
+      "pontuacao_acumulada": 700
+    }
+  ],
+  "fps_medio": 31.66,
+  "latencia_media_ms": 26.49,
+  "similaridade_media_pct": 49.5,
+  "video_gravado": "gravacao_execucao.mp4"
+}
