@@ -177,10 +177,74 @@ estado = "PREPARACAO"
 tempo_inicio_prep = time.perf_counter()
 tempo_inicio_pose_atual = time.perf_counter()
 
-# Controles de orientação da câmera
+# Controles de orientação da câmera e HUD
 rotacao = 0          # 0, 90, 180, 270 graus (tecla R)
 inverter_v = False   # Inverte de cabeça para baixo (tecla V)
 inverter_h = inverter_h_arg   # Modo espelho natural ativado por padrão (tecla H alterna)
+mostrar_metricas = True       # Painel de métricas PDI em tempo real (tecla M alterna)
+
+def desenhar_painel_metricas(frame, fps, fps_medio, latencia_ms, lat_media, similaridade_suave, sim_bruta, angulos_usuario, landmarks_ok, acertos, t_corrido):
+    """Desenha um painel compacto com métricas PDI em tempo real no canto superior esquerdo."""
+    h, w = frame.shape[:2]
+    panel_w = min(295, int(w * 0.46))
+    panel_h = 166
+    px, py = 15, 15
+
+    if px + panel_w > w or py + panel_h > h:
+        return
+
+    overlay = frame[py:py+panel_h, px:px+panel_w].copy()
+    cv2.rectangle(overlay, (0, 0), (panel_w, panel_h), (18, 22, 30), -1)
+    cv2.addWeighted(overlay, 0.76, frame[py:py+panel_h, px:px+panel_w], 0.24, 0, frame[py:py+panel_h, px:px+panel_w])
+    cv2.rectangle(frame, (px, py), (px + panel_w, py + panel_h), (0, 200, 255), 1)
+
+    cv2.putText(frame, "METRICAS PDI (TEMPO REAL)", (px + 8, py + 18),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.44, (0, 220, 255), 1)
+    cv2.line(frame, (px + 6, py + 24), (px + panel_w - 6, py + 24), (60, 70, 90), 1)
+
+    cor_fps = (0, 255, 100) if fps >= 25 else ((0, 200, 255) if fps >= 15 else (0, 80, 255))
+    cor_lat = (0, 255, 100) if latencia_ms <= 35 else ((0, 200, 255) if latencia_ms <= 60 else (0, 80, 255))
+    cor_sim = (0, 255, 100) if similaridade_suave >= LIMIAR_ACERTO else (0, 180, 255)
+
+    erro_ang = max(0.0, (1.0 - similaridade_suave / 100.0) * 60.0) if landmarks_ok else 60.0
+    lm_txt = "33/33 (OK)" if landmarks_ok else "0/33 (--)"
+    cor_lm = (0, 255, 100) if landmarks_ok else (0, 100, 255)
+
+    y_txt = py + 41
+    dy = 17
+
+    cv2.putText(frame, f"FPS: {fps:.1f}  (Med: {fps_medio:.1f})", (px + 8, y_txt),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.42, cor_fps, 1)
+    y_txt += dy
+    cv2.putText(frame, f"Latencia: {latencia_ms:.1f} ms  (Med: {lat_media:.1f})", (px + 8, y_txt),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.42, cor_lat, 1)
+    y_txt += dy
+    cv2.putText(frame, f"Similar.: {similaridade_suave:.1f}%  (Bruta: {sim_bruta:.1f}%)", (px + 8, y_txt),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.42, cor_sim, 1)
+    y_txt += dy
+    cv2.putText(frame, f"Erro Ang.: {erro_ang:.1f} deg  (Tol: 60)", (px + 8, y_txt),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.42, (220, 220, 220), 1)
+    y_txt += dy
+    cv2.putText(frame, f"Landmarks: {lm_txt}  | Acertos: {acertos}", (px + 8, y_txt),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.40, cor_lm, 1)
+    y_txt += dy
+
+    if angulos_usuario is not None:
+        oe = angulos_usuario.get("ombro_esq", 0.0)
+        od = angulos_usuario.get("ombro_dir", 0.0)
+        ce = angulos_usuario.get("cotovelo_esq", 0.0)
+        cd = angulos_usuario.get("cotovelo_dir", 0.0)
+        cv2.putText(frame, f"Ombros E/D: {oe:.0f} / {od:.0f} deg", (px + 8, y_txt),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.40, (200, 230, 255), 1)
+        y_txt += dy
+        cv2.putText(frame, f"Cotov. E/D: {ce:.0f} / {cd:.0f} deg  | {t_corrido:.0f}s", (px + 8, y_txt),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.40, (200, 230, 255), 1)
+    else:
+        cv2.putText(frame, "Ombros E/D: -- / -- deg", (px + 8, y_txt),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.40, (140, 140, 140), 1)
+        y_txt += dy
+        cv2.putText(frame, f"Cotov. E/D: -- / -- deg  | {t_corrido:.0f}s", (px + 8, y_txt),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.40, (140, 140, 140), 1)
 
 # -------------------------------------------------------------
 # ESTRUTURA PARA COLETA DE RESULTADOS E MÉTRICAS
@@ -260,9 +324,13 @@ with vision.PoseLandmarker.create_from_options(options) as detector:
         resultado = detector.detect_for_video(mp_image, timestamp_ms)
         pose_atual = poses[indice_pose]
         similaridade_suave = 0.0
+        sim_bruta = 0.0
+        angulos_usuario = None
+        landmarks_ok = False
 
         # Desenha esqueleto do jogador se detectado
         if resultado.pose_landmarks:
+            landmarks_ok = True
             landmarks = resultado.pose_landmarks[0]
             angulos_usuario, _ = extrair_vetor_angulos(landmarks)
             sim_bruta = calcular_similaridade(angulos_usuario, pose_atual["angulos"])
@@ -415,11 +483,27 @@ with vision.PoseLandmarker.create_from_options(options) as detector:
         t_corrido = t_fim_ciclo - tempo_inicio_jogo
         dados_csv_linhas.append(f"{timestamp_ms},{t_corrido:.2f},{estado},{pose_atual['nome']},{similaridade_suave:.1f},{fps:.1f},{latencia_ms:.1f},{pontuacao}\n")
 
-        # Barra inferior com atalhos
-        h_label = "SIM" if inverter_h else "NAO"
-        v_label = "SIM" if inverter_v else "NAO"
-        info_txt = f"FPS: {fps:.0f} | [H] Espelho ({h_label}) | [R] Girar ({rotacao} deg) | [V] Invert ({v_label}) | [G] Gravar | [Q] Sair"
-        cv2.putText(frame, info_txt, (15, h - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (200, 255, 200), 1)
+        # Painel de métricas PDI em tempo real na tela
+        if mostrar_metricas and not (estado == "PREPARACAO" and w < 750):
+            fps_med_atual = float(np.mean(historico_fps[-30:])) if historico_fps else fps
+            lat_med_atual = float(np.mean(historico_latencia[-30:])) if historico_latencia else latencia_ms
+            desenhar_painel_metricas(
+                frame, fps, fps_med_atual, latencia_ms, lat_med_atual,
+                similaridade_suave, sim_bruta, angulos_usuario, landmarks_ok,
+                len(poses_concluidas_log), t_corrido
+            )
+
+        # Barra inferior com atalhos (responsiva para 640px e HD+)
+        h_label = "S" if inverter_h else "N"
+        v_label = "S" if inverter_v else "N"
+        m_label = "S" if mostrar_metricas else "N"
+        if w >= 800:
+            info_txt = f"FPS: {fps:.0f} | Lat: {latencia_ms:.0f}ms | [M] Metricas ({m_label}) | [H] Espelho ({h_label}) | [R] Girar ({rotacao} deg) | [V] Invert ({v_label}) | [G] Gravar | [Q] Sair"
+            escala_txt = 0.42
+        else:
+            info_txt = f"FPS:{fps:.0f} | [M] Metr({m_label}) | [H] Esp({h_label}) | [R] Gir({rotacao}) | [V] Inv({v_label}) | [G] REC | [Q] Sair"
+            escala_txt = 0.37
+        cv2.putText(frame, info_txt, (15, h - 12), cv2.FONT_HERSHEY_SIMPLEX, escala_txt, (200, 255, 200), 1)
 
         # Indicador de gravação de vídeo na tela
         if gravando_video:
@@ -461,6 +545,8 @@ with vision.PoseLandmarker.create_from_options(options) as detector:
             inverter_v = not inverter_v
         elif tecla == ord('h'):
             inverter_h = not inverter_h
+        elif tecla == ord('m'):
+            mostrar_metricas = not mostrar_metricas
         elif tecla == ord(' '):  # Barra de espaço pula a preparação
             if estado == "PREPARACAO":
                 estado = "JOGANDO"
