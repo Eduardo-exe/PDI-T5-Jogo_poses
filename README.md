@@ -126,7 +126,7 @@ Com o arquivo `poses_referencia.json` gerado na pasta (já configurado com 6 pos
 2. **Fluxo do Jogo (Modo Demonstração de 5 segundos):**
    * **Fase de Preparação (5 segundos):** Antes de cada rodada, o jogo destaca a **pose alvo em tamanho grande no centro da tela** com um contador regressivo (`5s`, `4s`, `3s`...). Você tem esse tempo para memorizar e se posicionar!
    * **Fase da Rodada:** A pose alvo vai para a miniatura no canto superior direito e a avaliação é ativada.
-   * **Sustentação (2 segundos):** Mantenha o esqueleto verde (`>= 82%`) por 2 segundos para pontuar (+100) e avançar para a próxima pose (com nova contagem de 5s).
+   * **Sustentação (1,5 segundos):** Mantenha o esqueleto verde (`>= 65%`) por 1,5 segundos para pontuar (+100) e avançar para a próxima pose (com nova contagem de 5s).
 
 3. **📱 Visualização no Celular (Fora do Quarto):**
    * O jogo inicia um servidor web local automaticamente.
@@ -143,6 +143,7 @@ Com o arquivo `poses_referencia.json` gerado na pasta (já configurado com 6 pos
    * **`H`**: Inverte horizontalmente (ativa/desativa modo espelho).
    * **`ESPAÇO`**: Pula a contagem de 5 segundos e inicia a rodada imediatamente.
    * **`N`**: Pula para a próxima pose da lista.
+   * **`M`**: Exibe/oculta o **painel de métricas PDI** em tempo real (FPS, latência, similaridade, erro angular, ângulos articulares).
    * **`Q`** ou **`ESC`**: Encerra o jogo e gera os relatórios.
 
 5. **📊 Relatórios e Métricas Gerados Automaticamente:**
@@ -160,8 +161,8 @@ Caso queira ajustar a dificuldade, a pontuação, as articulações monitoradas 
 | Parâmetro | Arquivo | Valor Padrão | Descrição |
 | :--- | :--- | :--- | :--- |
 | `MODELO` | `jogo_poses.py` | `"pose_landmarker_full.task"` | Alterne para `"pose_landmarker_lite.task"` (já incluso na pasta) para testar ganho de FPS. |
-| `LIMIAR_ACERTO` | `jogo_poses.py` | `82.0` | Porcentagem mínima de similaridade para validar a pose (reduza para `75.0` se estiver muito rigoroso). |
-| `TEMPO_CONFIRMACAO` | `jogo_poses.py` | `2.0` | Tempo (em segundos) que o jogador precisa manter a pose para pontuar. |
+| `LIMIAR_ACERTO` | `jogo_poses.py` | `65.0` | Porcentagem mínima de similaridade para validar a pose (aumente para `75.0` se quiser mais rigor). |
+| `TEMPO_CONFIRMACAO` | `jogo_poses.py` | `1.5` | Tempo (em segundos) que o jogador precisa manter a pose para pontuar. |
 | `pontuacao += 100` | `jogo_poses.py` | `100` | Quantidade de pontos somados a cada pose concluída. |
 | `ARTICULACOES` | `utils_pose.py` | `8 ângulos` | Define quais trios de *landmarks* entram no cálculo e ganham marcadores vermelhos na tela. |
 | `CONEXOES_CORPO` | `utils_pose.py` | `12 segmentos` | Define quais linhas do esqueleto são desenhadas na interface. |
@@ -176,7 +177,20 @@ Caso queira ajustar a dificuldade, a pontuação, as articulações monitoradas 
 * **FPS (Quadros por Segundo):** Medido continuamente a cada ciclo de captura, inferência e renderização e exibido no rodapé da janela.
 * **Latência (ms):** Tempo total de processamento por quadro entre a leitura da webcam e a atualização visual na tela.
 * **Taxa de Acerto:** Baseada na comparação dos ângulos articulares definidos em `ARTICULACOES` (ombros, cotovelos, quadris e joelhos por padrão), tornando o reconhecimento invariante à altura do jogador e à distância da câmera.
-* **Estabilidade:** Garantida por um filtro de média móvel temporal (`FiltroEstabilidade`) combinado à exigência de sustentação contínua por 2 segundos, evitando oscilações e falsos positivos.
+* **Estabilidade:** Garantida por um filtro de média móvel temporal (`FiltroEstabilidade`) combinado à exigência de sustentação contínua por 1,5 segundos, evitando oscilações e falsos positivos.
+
+---
+
+## ☁️ Executar no Google Colab (Sem Instalar Nada)
+
+Para rodar o jogo diretamente no navegador (ideal para apresentação no computador do professor):
+
+1. Acesse o notebook: [`jogo_poses_colab.ipynb`](https://colab.research.google.com/github/Eduardo-exe/PDI-T5-Jogo_poses/blob/main/jogo_poses_colab.ipynb)
+2. Execute a célula **"Instalar dependências"** e aguarde ~30s.
+3. Execute a célula **"Jogo de Poses (WebRTC)"** — o navegador pedirá permissão para usar a câmera.
+4. Pressione **Iniciar Jogo** e imite as poses exibidas na tela!
+
+> **Requisitos:** Google Chrome ou Edge com câmera (webcam do notebook ou celular via DroidCam/IP Webcam como webcam virtual). O Colab utiliza WebRTC para captura local, MediaPipe Lite para detecção e transmite os frames processados em tempo real.
 
 ---
 

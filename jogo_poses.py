@@ -312,10 +312,6 @@ with vision.PoseLandmarker.create_from_options(options) as detector:
         if inverter_v:
             frame = cv2.flip(frame, 0)
 
-        # 3. Inversão Horizontal (H: modo espelho para ficar natural)
-        if inverter_h:
-            frame = cv2.flip(frame, 1)
-
         h, w, _ = frame.shape
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
@@ -376,6 +372,12 @@ with vision.PoseLandmarker.create_from_options(options) as detector:
                 else:
                     inicio_acerto = None
 
+        # 3. Inversão Horizontal (H) aplicada APÓS o MediaPipe para não trocar esquerdo/direito anatômicos
+        if inverter_h:
+            frame = cv2.flip(frame, 1)
+
+        pontos_alvo_tela = pose_atual["pontos_2d"] if inverter_h else [(1.0 - px, py) for px, py in pose_atual["pontos_2d"]]
+
         # -------------------------------------------------------------
         # FASE 1: PREPARAÇÃO (Mostra a pose completa por 5 segundos)
         # -------------------------------------------------------------
@@ -403,7 +405,7 @@ with vision.PoseLandmarker.create_from_options(options) as detector:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
             # Esqueleto grande da pose alvo
-            desenhar_esqueleto_alvo(frame, pose_atual["pontos_2d"], x0 + 20, y0 + 120, box_w - 40, box_h - 165, cor=(0, 255, 255), espessura=4)
+            desenhar_esqueleto_alvo(frame, pontos_alvo_tela, x0 + 20, y0 + 120, box_w - 40, box_h - 165, cor=(0, 255, 255), espessura=4)
 
             cv2.putText(frame, "Olhe a pose e assuma a posicao!", (x0 + 20, y0 + box_h - 15),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
@@ -428,7 +430,7 @@ with vision.PoseLandmarker.create_from_options(options) as detector:
             cv2.addWeighted(overlay_alvo, 0.75, frame[y0:y0+box_h, x0:x0+box_w], 0.25, 0, frame[y0:y0+box_h, x0:x0+box_w])
             cv2.rectangle(frame, (x0, y0), (x0 + box_w, y0 + box_h), (0, 255, 255), 2)
             cv2.putText(frame, "ALVO", (x0 + 8, y0 + 16), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 255, 255), 1)
-            desenhar_esqueleto_alvo(frame, pose_atual["pontos_2d"], x0 + 4, y0 + 18, box_w - 8, box_h - 22, cor=(0, 255, 255), espessura=2)
+            desenhar_esqueleto_alvo(frame, pontos_alvo_tela, x0 + 4, y0 + 18, box_w - 8, box_h - 22, cor=(0, 255, 255), espessura=2)
 
             # HUD compacto no canto inferior esquerdo (NÃO cobre a cabeça nem o corpo)
             hud_w = min(280, int(w * 0.46))

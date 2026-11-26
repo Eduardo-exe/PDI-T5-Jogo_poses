@@ -26,6 +26,7 @@ __pycache__/
 *.mp4
 gerar_slides_5_paginas.py
 ufma_logo.png
+teste_droidcam_colab.ipynb
 
 # SO e IDE
 .DS_Store
