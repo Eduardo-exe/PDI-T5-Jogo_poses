@@ -161,6 +161,7 @@ iniciar_servidor_web(porta=5000)
 
 print(f"Tentando conectar na câmera: {fonte_cam}...")
 cap = cv2.VideoCapture(fonte_cam)
+cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)       # Reduz buffer → menos atraso
 if not cap.isOpened():
     print(f"\n[AVISO] Câmera ainda não encontrada em: {fonte_cam}")
     print("O servidor web em http://{}:5000 CONTINUA ATIVO.".format(obter_ip_local()))
@@ -288,6 +289,7 @@ with vision.PoseLandmarker.create_from_options(options) as detector:
                     break
 
                 cap = cv2.VideoCapture(fonte_cam)
+                cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)       # Reduz buffer → menos atraso
                 if cap.isOpened():
                     ret_teste, frame_teste = cap.read()
                     if ret_teste:
