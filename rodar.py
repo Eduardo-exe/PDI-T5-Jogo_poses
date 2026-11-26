@@ -160,10 +160,30 @@ def main():
         cmd = [sys.executable, "jogo_poses.py", url_alvo, "--gravar", "--espelho"]
         sys.exit(subprocess.call(cmd))
 
-    # Busca automática
+    # Busca automática — tenta webcam nativa primeiro, depois IP Webcam no celular
     print("\n" + "="*65)
     print("   🎮 JOGO DE IMITAÇÃO DE POSES - PDI UFMA")
     print("="*65)
+
+    # Tenta detectar webcam nativa do notebook
+    print("🔍 Verificando webcam nativa do computador...")
+    try:
+        import cv2 as _cv2
+        _cap = _cv2.VideoCapture(0)
+        if _cap.isOpened():
+            ret_test, _ = _cap.read()
+            _cap.release()
+            if ret_test:
+                print("✅ Webcam nativa detectada! Iniciando com câmera do notebook...")
+                print("="*65 + "\n")
+                cmd = [sys.executable, "jogo_poses.py", "0", "--gravar", "--espelho"]
+                sys.exit(subprocess.call(cmd))
+        else:
+            _cap.release()
+    except Exception:
+        pass
+
+    print("❌ Webcam nativa não encontrada. Buscando celular na rede Wi-Fi...\n")
     print("📱 CONEXÃO AUTOMÁTICA COM O APP 'IP WEBCAM' DO CELULAR:")
     print("   1. Abra o app IP Webcam no celular")
     print("   2. Role a tela até o final e toque em: >>> 'Start server' <<<")
